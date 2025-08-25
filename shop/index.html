@@ -33,6 +33,12 @@ button:hover { background: #eee; }
   gap: 10px;
   z-index: 100;
 }
+.custom-file-btn {cursor: pointer; margin: 2px; padding: 5px 10px; border-radius: 6px; border: 1px solid #ccc; background: #f8f8f8;
+}
+.custom-file-btn:hover {
+  background: #eee;
+}
+
 footer {
   position: fixed;
   bottom: 0;
@@ -53,7 +59,10 @@ footer {
   <button id="btnAdd">Добавить товар</button>
   <button id="btnReset">Сбросить остатки</button>
   <button id="btnExport">Экспорт CSV</button>
-  <input type="file" id="csvFile" accept=".csv">
+<label id="btnImport" class="custom-file-btn">
+  Выберите файл
+  <input type="file" id="csvFile" accept=".csv" style="display:none;">
+</label>
 </div>
 
 <div id="products"></div>
@@ -66,6 +75,8 @@ footer {
 </div>
 
 <script type="module">
+    document.getElementById("csvFile").addEventListener("change", e => importCSV(e.target.files[0]));
+
 // ---------- Supabase setup ----------
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 const SUPABASE_URL = 'https://bzwbwkatepezdwamqvbn.supabase.co';
