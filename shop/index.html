@@ -69,6 +69,17 @@ function updateImage(id, value) {
   save();
 }
 
+function uploadImage(id, file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const p = products.find(p => p.id === id);
+    if (!p) return;
+    p.image = e.target.result; // base64
+    save();
+  };
+  reader.readAsDataURL(file);
+}
+
 function resetAll() {
   if (!confirm("Сбросить остатки всех товаров?")) return;
   products.forEach(p => p.sizes = {S:0,M:0,L:0});
@@ -117,7 +128,8 @@ function render() {
         <div class="photo">${p.image ? `<img src="${p.image}" alt="">` : "Фото"}</div>
         <div style="flex:1">
           <input type="text" value="${p.name}" onchange="updateName(${p.id}, this.value)" placeholder="Название" style="width:100%;padding:4px;">
-          <input type="text" value="${p.image}" onchange="updateImage(${p.id}, this.value)" placeholder="URL изображения" style="width:100%;margin-top:4px;padding:4px;">
+          <input type="text" value="${p.image.startsWith('data:') ? '' : p.image}" onchange="updateImage(${p.id}, this.value)" placeholder="URL изображения" style="width:100%;margin-top:4px;padding:4px;">
+          <input type="file" accept="image/*" onchange="uploadImage(${p.id}, this.files[0])" style="width:100%;margin-top:4px;">
           <div class="sizes">
             ${["S","M","L"].map(size => `
               <div class="size">
