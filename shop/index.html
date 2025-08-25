@@ -53,14 +53,30 @@ const updateImage = (id,value) => { products.find(p=>p.id===id).image=value; sav
 const uploadImage = (id,file) => { const reader=new FileReader(); reader.onload=e=>updateImage(id,e.target.result); reader.readAsDataURL(file); };
 const resetAll = () => { if(!confirm("Сбросить остатки всех товаров?")) return; products.forEach(p=>p.sizes={S:0,M:0,L:0}); save(); };
 
-const openPreview = src => { const modal=document.getElementById("previewModal"); modal.querySelector("img").src=src; modal.style.display="flex"; };
-const closePreview = () => { document.getElementById("previewModal").style.display="none"; };
+// Откроем превью
+const openPreview = src => {
+  if (!src) return;
+  const modal = document.getElementById("previewModal");
+  modal.querySelector("img").src = src;
+  modal.style.display = "flex";
+};
+
+// Закроем превью по клику вне картинки
+const closePreview = () => {
+  document.getElementById("previewModal").style.display = "none";
+};
+
+// Добавляем событие на модальное окно
+document.getElementById("previewModal").addEventListener("click", (e) => {
+  if (e.target.id === "previewModal") closePreview(); // клик только по фону
+});
+
 
 const exportCSV = () => {
-  const header = "Название;Изображение;S;M;L;Итого";
-  const rows = products.map(p=>[p.name,p.image,p.sizes.S,p.sizes.M,p.sizes.L,p.sizes.S+p.sizes.M+p.sizes.L].join(";"));
+  const header = "Название,Изображение,S,M,L,Итого";
+  const rows = products.map(p=>[p.name,p.image,p.sizes.S,p.sizes.M,p.sizes.L,p.sizes.S+p.sizes.M+p.sizes.L].join(","));
   const totals = calcTotals();
-  const footer = ["ИТОГО","",totals.S,totals.M,totals.L,totals.all].join(";");
+  const footer = ["ИТОГО","",totals.S,totals.M,totals.L,totals.all].join(",");
   const csv = [header,...rows,footer].join("\n");
   const blob = new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
   const url = URL.createObjectURL(blob);
@@ -72,8 +88,10 @@ const importCSV = file => {
   reader.onload=e=>{
     const lines = e.target.result.split("\n").slice(1).filter(Boolean);
     lines.forEach(line=>{
-      const [name,image,S,M,L] = line.split(";");
-      products.push({ id:Date.now()+Math.random(), name:name.trim(), image:image.trim(), sizes:{S:+S,M:+M,L:+L} });
+      const [name,image,S,M,L] = line.split(",");
+      if(name && image!==undefined){
+        products.push({ id:Date.now()+Math.random(), name:name.trim(), image:image.trim(), sizes:{S:+S,M:+M,L:+L} });
+      }
     });
     save();
   };
@@ -96,7 +114,7 @@ const render = () => {
     div.className="product";
     div.draggable=true;
     div.innerHTML=`
-      <div class="photo" onclick="p.image && openPreview('${p.image}')">${p.image ? `<img src="${p.image}">` : "Фото"}</div>
+      <div class="photo">${p.image ? `<img src="${p.image}" alt="Preview">` : "Фото"}</div>
       <div style="flex:1">
         <input type="text" value="${p.name}" onchange="updateName(${p.id}, this.value)" placeholder="Название" style="width:100%;padding:4px;">
         <input type="text" value="${p.image.startsWith('data:') ? '' : p.image}" onchange="updateImage(${p.id}, this.value); render();" placeholder="URL изображения" style="width:100%;margin-top:4px;padding:4px;">
@@ -115,6 +133,9 @@ const render = () => {
           <button onclick="removeProduct(${p.id})" style="color:red;margin-left:10px;">Удалить</button>
         </div>
       </div>`;
+    // Открытие превью при клике
+    const photoDiv = div.querySelector(".photo");
+    photoDiv.addEventListener("click",()=>openPreview(p.image));
     div.addEventListener("dragstart", e=>handleDragStart(e,index));
     div.addEventListener("dragend", handleDragEnd);
     div.addEventListener("dragover", handleDragOver);
