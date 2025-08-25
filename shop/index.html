@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Учёт проданных футболок</title>
+  <style>
+    body { font-family: sans-serif; background: #f9fafb; margin: 0; padding: 20px; }
+    h1 { margin-bottom: 10px; }
+    .product { border: 1px solid #ddd; background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 15px; display: flex; gap: 15px; }
+    .photo { width: 120px; height: 120px; background: #f0f0f0; border: 1px solid #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .photo img { width: 100%; height: 100%; object-fit: cover; }
+    .sizes { display: flex; gap: 10px; margin-top: 10px; }
+    .size { display: flex; flex-direction: column; align-items: center; border: 1px solid #ddd; border-radius: 8px; padding: 8px; width: 60px; }
+    button { cursor: pointer; margin: 2px; padding: 5px 10px; border-radius: 6px; border: 1px solid #ccc; background: #f8f8f8; }
+    button:hover { background: #eee; }
+    .controls { margin-top: 10px; }
+    footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>Учёт проданных футболок</h1>
+  <button onclick="addProduct()">Добавить товар</button>
+  <button onclick="resetAll()">Сбросить остатки</button>
+  <button onclick="exportCSV()">Экспорт CSV</button>
+
+  <div id="products"></div>
+
+  <footer>
+    <div id="totals"></div>
+  </footer>
+
+<script type="text/javascript">
+let products = JSON.parse(localStorage.getItem("tshirt_inventory_v1") || "[]");
+
+function save() {
+  localStorage.setItem("tshirt_inventory_v1", JSON.stringify(products));
+  render();
+}
+
+function addProduct() {
+  products.unshift({ id: Date.now(), name: "Новый товар", image: "", sizes: {S:0, M:0, L:0} });
+  save();
+}
+
+function removeProduct(id) {
+  products = products.filter(p => p.id !== id);
+  save();
+}
+
+function updateSize(id, size, delta) {
+  const p = products.find(p => p.id === id);
+  if (!p) return;
+  p.sizes[size] = Math.max(0, (p.sizes[size]||0) + delta);
+  save();
+}
+
+function updateName(id, value) {
+  const p = products.find(p => p.id === id);
+  if (!p) return;
+  p.name = value;
+  save();
+}
+
+function updateImage(id, value) {
+  const p = products.find(p => p.id === id);
+  if (!p) return;
+  p.image = value;
+  save();
+}
+
+function resetAll() {
+  if (!confirm("Сбросить остатки всех товаров?")) return;
+  products.forEach(p => p.sizes = {S:0,M:0,L:0});
+  save();
+}
+
+function exportCSV() {
+  const header = "Название,S,M,L,Итого";
+  const rows = products.map(p => [
+    p.name,
+    p.sizes.S,
+    p.sizes.M,
+    p.sizes.L,
+    p.sizes.S + p.sizes.M + p.sizes.L
+  ].join(","));
+  const totals = calcTotals();
+  const footer = ["ИТОГО", totals.S, totals.M, totals.L, totals.all].join(",");
+  const csv = [header, ...rows, footer].join("\n");
+  const blob = new Blob(["\uFEFF"+csv], { type:"text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "inventory.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function calcTotals() {
+  const sum = {S:0,M:0,L:0,all:0};
+  for (const p of products) {
+    sum.S += p.sizes.S;
+    sum.M += p.sizes.M;
+    sum.L += p.sizes.L;
+  }
+  sum.all = sum.S + sum.M + sum.L;
+  return sum;
+}
+
+function render() {
+  const container = document.getElementById("products");
+  container.innerHTML = "";
+  products.forEach(p => {
+    const total = p.sizes.S + p.sizes.M + p.sizes.L;
+    container.innerHTML += `
+      <div class="product">
+        <div class="photo">${p.image ? `<img src="${p.image}" alt="">` : "Фото"}</div>
+        <div style="flex:1">
+          <input type="text" value="${p.name}" onchange="updateName(${p.id}, this.value)" placeholder="Название" style="width:100%;padding:4px;">
+          <input type="text" value="${p.image}" onchange="updateImage(${p.id}, this.value)" placeholder="URL изображения" style="width:100%;margin-top:4px;padding:4px;">
+          <div class="sizes">
+            ${["S","M","L"].map(size => `
+              <div class="size">
+                <div>${size}</div>
+                <button onclick="updateSize(${p.id}, '${size}', -1)">-</button>
+                <div>${p.sizes[size]}</div>
+                <button onclick="updateSize(${p.id}, '${size}', 1)">+</button>
+              </div>`).join("")}
+          </div>
+          <div class="controls">
+            Итого: <b>${total}</b>
+            <button onclick="removeProduct(${p.id})" style="color:red;margin-left:10px;">Удалить</button>
+          </div>
+        </div>
+      </div>`;
+  });
+  const totals = calcTotals();
+  document.getElementById("totals").textContent = `Итого по размерам: S ${totals.S}, M ${totals.M}, L ${totals.L}. Общий остаток: ${totals.all}`;
+}
+
+render();
+</script>
+</body>
+</html>
