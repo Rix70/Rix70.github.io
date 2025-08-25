@@ -19,7 +19,6 @@ button:hover { background: #eee; }
 #products {
   margin-top: 50px; /* высота шапки + немного отступа */
     margin-bottom: 30px; /* высота футера + небольшой запас */
-
 }
 #buttons {
   position: fixed;
@@ -75,7 +74,7 @@ footer {
 </div>
 
 <script type="module">
-    document.getElementById("csvFile").addEventListener("change", e => importCSV(e.target.files[0]));
+    
 
 // ---------- Supabase setup ----------
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
@@ -248,8 +247,7 @@ function render(){
       <div class="photo">${p.image ? `<img src="${p.image}" alt="Preview">` : "Фото"}</div>
       <div style="flex:1">
         <input type="text" value="${p.name}" placeholder="Название" style="width:100%;padding:4px;">
-        <input type="text" value="${p.image.startsWith('data:')?'':p.image}" placeholder="URL изображения" style="width:100%;margin-top:4px;padding:4px;">
-        <input type="file" accept="image/*" style="width:100%;margin-top:4px;">
+        <input type="text" value="${p.image.startsWith('data:')?'':p.image}" placeholder="URL изображения" style="width:100%;margin-top:4px;padding:4px;display:none;" >
         <div class="sizes">
           ${["S","M","L"].map(size=>`
             <div class="size">
@@ -275,7 +273,7 @@ function render(){
     div.querySelector('input[type="text"]:nth-of-type(2)').addEventListener("change", e=>updateImage(p.id,e.target.value));
     
     // upload image
-    div.querySelector('input[type="file"]').addEventListener("change", e=>uploadImage(p.id,e.target.files[0]));
+    //div.querySelector('input[type="file"]').addEventListener("change", e=>uploadImage(p.id,e.target.files[0]));
     
     // + и - для размеров
     div.querySelectorAll(".plus").forEach(btn=>{
@@ -306,7 +304,7 @@ function render(){
 document.getElementById("btnAdd").addEventListener("click", addProduct);
 document.getElementById("btnReset").addEventListener("click", resetAll);
 document.getElementById("btnExport").addEventListener("click", exportCSV);
-document.getElementById("csvFile").addEventListener("change", e=>importCSV(e.target.files[0]));
+document.getElementById("csvFile").addEventListener("change", e => importCSV(e.target.files[0]));
 
 // ---------- Initial load ----------
 loadFromSupabase();
